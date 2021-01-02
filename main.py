@@ -2,6 +2,7 @@
 import os 
 from random import randrange
 import argparse
+import sys
 
 
 def generate (parent_dir):
@@ -59,7 +60,9 @@ def send (data, pad_available, prefix_available, suffix_available):
     prefix = f_pref.read()
     f_suff = open(suffix_available, "r")
     suffix = f_suff.read()
-
+    f_pad.close()
+    f_pref.close()
+    f_suff.close()
     # binary convert then applicate (data XOR pad) 
     bin_data = ''.join((bin( ord(c) )[2:].rjust(8, '0')) for c in data)
     print('- ',pad)
@@ -74,6 +77,29 @@ def send (data, pad_available, prefix_available, suffix_available):
     f_ = open(cipher_path, "w")
     f_.write(prefix + cipher +suffix)
 
+    # shred the pad used
+    #os.remove(pad_available)
+
+
+'''
+function that return the pad corresponding for encodding
+'''
+def corresponding_pad(cipher_file):
+    f = open(cipher_file)
+    cipher_prefix = f.read(48*8)
+    pads_file_corresponding = os.path.join(cipher_file.split('-')[0], cipher_file.split('-')[1])
+
+    for root, dirs, files in os.walk(pads_file_corresponding):
+        for filename in files: # only files
+            if filename.endswith("p.txt"): # on lye prefixe files
+                f = open(os.path.join(pads_file_corresponding, filename))
+                original_pre = f.read()
+                if(original_pre == cipher_prefix):
+                    print('Le pad correpondent est: ',filename.replace('p','c'))
+                    corresp_pad = filename.replace('p','c')
+                    f.close()
+                    break
+    return corresp_pad
 
 ################## Main Function ##################
 if __name__ == "__main__":
@@ -83,16 +109,38 @@ if __name__ == "__main__":
     parser.add_argument("-g", '--generate', action='store_true', help='mode generte')
     parser.add_argument("-s", '--send', action='store_true', help='mode send ')
     parser.add_argument("-r", '--receive', action='store_true', help='mode receive')
-    parser.add_argument("-f", '--file', help='file to send')
+    parser.add_argument("-f", '--file', help='file to send' , required='-r' in sys.argv)
     parser.add_argument("-t", '--text', help='text to send')
     parser.add_argument('dir', help=' directory to store the pads')
     args = parser.parse_args()
     
     if (args.send):
         print('mode s')
+        # send mode
+        if args.file:
+            data = args.file
+            with open(args.file, 'r') as file:
+                data = file.read().replace('\n', '')
+        elif args.text:
+            data = args.text
+        else:
+            data = input("Enter your text: ")
+
+        if(len(data) > 2000):
+            print("Data too long to send !")
+
+        # Get the first pad available path    
+        pad_available, prefix_available, suffix_available = available_pads_in (args.dir)
+        print('pad available is: ',pad_available)
+
+        # funcition encode (data, pad) (bin then xor)
+        send(data, pad_available, prefix_available, suffix_available)
     elif (args.receive):
         print('mode r')
+        pad_cooresp = corresponding_pad(args.file)
+        print(pad_cooresp)
     else:
+        # generate mode
         print('mode g')
         parent_dir, subfolder = generate(args.dir)
         print(subfolder)
@@ -100,24 +148,3 @@ if __name__ == "__main__":
     
 
 
-    # sent mode
-    if args.file:
-        data = args.file
-        with open(args.file, 'r') as file:
-            data = file.read().replace('\n', '')
-        # sent(data)
-    elif args.text:
-        data = args.text
-        # sent(data) 
-    else:
-        data = input("Enter your text: ")
-        # sent(data) 
-    if(len(data) > 2000):
-        print("Data too long to send !")
-
-    # Get the first pad available path    
-    pad_available, prefix_available, suffix_available = available_pads_in (args.dir)
-    print('pad available is: ',pad_available)
-
-    # funcition encode (data, pad) (bin then xor)
-    send(data, pad_available, prefix_available, suffix_available)
