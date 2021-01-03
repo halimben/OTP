@@ -1,17 +1,16 @@
-# importing os module 
+# importing modules
 import os 
 from random import randrange
 import argparse
 import sys
 
 
+
 def generate (parent_dir):
     '''
-    generate files, prefixes, suffixs and pads
-
+    Generate files, prefixes, suffixs and pads
             Parameters:
                     parent_dir (directory): the directory which contain pads folders (ex: dir)
-
             Returns:
                     none
     '''
@@ -49,10 +48,8 @@ def generate (parent_dir):
 def available_pads_in (dir):
     '''
     get the pad available to encode
-
             Parameters:
                     dir (directory): the directory which contain pads folders
-
             Returns:
                     p (path): path of pad available to encode
                     prefix (path): path of prefix available to encode
@@ -78,13 +75,11 @@ def available_pads_in (dir):
 def send (data, pad_available, prefix_available, suffix_available):
     '''
     create a file named (ex: dir-0000-00t) next to main.py which contain data encrypted
-
             Parameters:
                     data (str): the message to send
                     pad_available (file): pad available to encode
                     prefix_available (file): prefix available to encode
                     suffix_available (file): suffix available to encode
-
             Returns:
                     none
     '''
@@ -114,16 +109,15 @@ def send (data, pad_available, prefix_available, suffix_available):
 
     # shred the pad used
     #os.remove(pad_available)
+    #os.system("shred -n 35 -z -u "+pad_available)
 
 
 
 def corresponding_pad(cipher_file):
     '''
     Returns the the path of pad corresponding for decodding
-
             Parameters:
                     cipher_file (file): the encrypted file
-
             Returns:
                     corresp_pad (path): path of pad corresponding for decodding
     '''
@@ -144,14 +138,12 @@ def corresponding_pad(cipher_file):
 
 
 
-def revieve(cipher_file, pad_cooresp ):
+def recieve(cipher_file, pad_cooresp ):
     '''
     Returns the cleartext message
-
             Parameters:
                     cipher_file (file): the encrypted file
                     pad_cooresp (path): path of the pad which contain de pas de decrypt
-
             Returns:
                     clear_text (str): return the message recieved
     '''
@@ -209,7 +201,7 @@ if __name__ == "__main__":
     elif (args.receive):
         print('mode r')
         pad_cooresp = corresponding_pad(args.file)
-        print(revieve(args.file, pad_cooresp))
+        print(recieve(args.file, pad_cooresp))
     else:
         # generate mode
         print('mode g')
