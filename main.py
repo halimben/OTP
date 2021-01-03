@@ -6,6 +6,15 @@ import sys
 
 
 def generate (parent_dir):
+    '''
+    generate files, prefixes, suffixs and pads
+
+            Parameters:
+                    parent_dir (directory): the directory which contain pads folders (ex: dir)
+
+            Returns:
+                    none
+    '''
     # Parent Directory path 
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
@@ -34,10 +43,21 @@ def generate (parent_dir):
         f_1.close()
         f_2.close()
         f_3.close()
-    return parent_dir, f
+
 
 
 def available_pads_in (dir):
+    '''
+    get the pad available to encode
+
+            Parameters:
+                    dir (directory): the directory which contain pads folders
+
+            Returns:
+                    p (path): path of pad available to encode
+                    prefix (path): path of prefix available to encode
+                    suffix (path): path of suffix available to encode
+    '''
     ps = os.path.join(dir, '0000')
     a = 0
     b= 0
@@ -50,9 +70,24 @@ def available_pads_in (dir):
         p = os.path.join(ps, str(b).rjust(2, '0')+'c.txt') # first pad available
     prefix = os.path.join(ps, str(b).rjust(2, '0')+'p.txt') # first pad available
     suffix = os.path.join(ps, str(b).rjust(2, '0')+'s.txt') # first pad available
+    print('on utulise',p)
     return p, prefix, suffix
 
+
+
 def send (data, pad_available, prefix_available, suffix_available):
+    '''
+    create a file named (ex: dir-0000-00t) next to main.py which contain data encrypted
+
+            Parameters:
+                    data (str): the message to send
+                    pad_available (file): pad available to encode
+                    prefix_available (file): prefix available to encode
+                    suffix_available (file): suffix available to encode
+
+            Returns:
+                    none
+    '''
     # read pad prefix and suffix
     f_pad = open(pad_available, "r")
     pad = f_pad.read()
@@ -63,11 +98,11 @@ def send (data, pad_available, prefix_available, suffix_available):
     f_pad.close()
     f_pref.close()
     f_suff.close()
+
     # binary convert then applicate (data XOR pad) 
     bin_data = ''.join((bin( ord(c) )[2:].rjust(8, '0')) for c in data)
-    print('- ',pad)
-    print('- ',bin_data)
-    cipher = '{0:b}'.format(int(bin_data, 2) ^ int(pad, 2)) # binary xor
+    cipher = int(bin_data, 2) ^ int(pad, 2)# binary xor
+    cipher = bin(cipher)[2:].zfill(len(pad))
 
     # Path of the resulat file
     pad_path = pad_available.split(os.sep)
@@ -81,25 +116,61 @@ def send (data, pad_available, prefix_available, suffix_available):
     #os.remove(pad_available)
 
 
-'''
-function that return the pad corresponding for encodding
-'''
+
 def corresponding_pad(cipher_file):
+    '''
+    Returns the the path of pad corresponding for decodding
+
+            Parameters:
+                    cipher_file (file): the encrypted file
+
+            Returns:
+                    corresp_pad (path): path of pad corresponding for decodding
+    '''
     f = open(cipher_file)
     cipher_prefix = f.read(48*8)
     pads_file_corresponding = os.path.join(cipher_file.split('-')[0], cipher_file.split('-')[1])
 
     for root, dirs, files in os.walk(pads_file_corresponding):
         for filename in files: # only files
-            if filename.endswith("p.txt"): # on lye prefixe files
+            if filename.endswith("p.txt"): # only prefixe files
                 f = open(os.path.join(pads_file_corresponding, filename))
                 original_pre = f.read()
-                if(original_pre == cipher_prefix):
-                    print('Le pad correpondent est: ',filename.replace('p','c'))
-                    corresp_pad = filename.replace('p','c')
+                if(original_pre == cipher_prefix): # check the corresponding prefix
+                    corresp_pad = os.path.join(pads_file_corresponding, filename).replace('p','c')
                     f.close()
                     break
     return corresp_pad
+
+
+
+def revieve(cipher_file, pad_cooresp ):
+    '''
+    Returns the cleartext message
+
+            Parameters:
+                    cipher_file (file): the encrypted file
+                    pad_cooresp (path): path of the pad which contain de pas de decrypt
+
+            Returns:
+                    clear_text (str): return the message recieved
+    '''
+    # read pad correspending and cipher text
+    f_c = open(cipher_file)
+    f_p = open(pad_cooresp)
+    c = f_c.read()[48*8 : (2000+48)*8] # obtain only cipher part without prefix and suffix
+    p = f_p.read()
+    f_c.close()
+    f_p.close()
+
+    # Get cleartext message 
+    clear_bin = bin(int(c, 2) ^ int(p, 2))[2:] # Binary message
+    clear_bin = clear_bin.rjust(len(clear_bin) + (8 - len(clear_bin) % 8), '0') # ajust the binary message to obtain bits 8 by 8
+    clear_text = ''.join(chr(int(clear_bin[i*8:i*8+8],2)) for i in range(len(clear_bin)//8)) # binary to string
+
+    return clear_text
+
+
 
 ################## Main Function ##################
 if __name__ == "__main__":
@@ -138,13 +209,8 @@ if __name__ == "__main__":
     elif (args.receive):
         print('mode r')
         pad_cooresp = corresponding_pad(args.file)
-        print(pad_cooresp)
+        print(revieve(args.file, pad_cooresp))
     else:
         # generate mode
         print('mode g')
-        parent_dir, subfolder = generate(args.dir)
-        print(subfolder)
-
-    
-
-
+        generate(args.dir)
