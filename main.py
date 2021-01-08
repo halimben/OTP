@@ -3,7 +3,8 @@ import os
 from random import randrange
 import argparse
 import sys
-
+import subprocess
+from subprocess import check_output
 
 
 def generate (parent_dir):
@@ -30,18 +31,40 @@ def generate (parent_dir):
         #os.makedirs(os.path.join(f, str(index).rjust(2,'0')))
         name = os.path.join(f, str(index).rjust(2, '0'))
         f1, f2, f3 = name+'p.txt', name+'c.txt', name+'s.txt'
-        
         f_1 = open(f1, "a")
         f_2 = open(f2, "a")
         f_3 = open(f3, "a")
-        for n in range(0,48):
-            f_1.write(bin(randrange(255))[2:].rjust(8, '0'))
-            f_3.write(bin(randrange(255))[2:].rjust(8, '0'))
-        for n in range(0,2000):   
-            f_2.write(bin(randrange(255))[2:].rjust(8, '0'))
+        with open("/dev/urandom", 'rb') as data:
+            for x in data.read(2000):
+                f_2.write(bin(x)[2:].rjust(8, '0')) 
+            for x in data.read(48):
+                f_1.write(bin(x)[2:].rjust(8, '0'))
+            for x in data.read(48):
+                f_3.write(bin(x)[2:].rjust(8, '0'))
+            
         f_1.close()
         f_2.close()
         f_3.close()
+
+
+
+def check_up_interfaces():
+    '''
+    check if there is any up interface, if true exception will be raised
+            Parameters:
+                    none
+            Returns:
+                    non
+    '''
+    interfaces = check_output(["ls", "/sys/class/net"]).decode("utf-8")
+    interfaces = interfaces.split("\n")
+
+    for interface in interfaces[:-2]:
+        print(interface)
+        statut = check_output(["cat", "/sys/class/net/{}/operstate".format(interface)]).decode("utf-8")
+        statut = statut.split("\n")
+        if(statut[0] == 'up'):
+            raise Exception('All network interfaces should be down')
 
 
 
@@ -65,9 +88,8 @@ def available_pads_in (dir):
     while not os.path.exists(p): 
         b += 1
         p = os.path.join(ps, str(b).rjust(2, '0')+'c.txt') # first pad available
-    prefix = os.path.join(ps, str(b).rjust(2, '0')+'p.txt') # first pad available
-    suffix = os.path.join(ps, str(b).rjust(2, '0')+'s.txt') # first pad available
-    print('on utulise',p)
+    prefix = os.path.join(ps, str(b).rjust(2, '0')+'p.txt') # first prefix available
+    suffix = os.path.join(ps, str(b).rjust(2, '0')+'s.txt') # first suffix available
     return p, prefix, suffix
 
 
@@ -109,7 +131,7 @@ def send (data, pad_available, prefix_available, suffix_available):
 
     # shred the pad used
     #os.remove(pad_available)
-    #os.system("shred -n 35 -z -u "+pad_available)
+    os.system("shred -n 35 -z -u "+pad_available)
 
 
 
@@ -166,6 +188,10 @@ def recieve(cipher_file, pad_cooresp ):
 
 ################## Main Function ##################
 if __name__ == "__main__":
+    # if there is up interface => excpetion
+    #check_up_interfaces()
+
+
     
     # Parse arguments
     parser = argparse.ArgumentParser()
