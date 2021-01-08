@@ -126,7 +126,7 @@ def send (data, pad_available, prefix_available, suffix_available):
     cipher_path = '' + pad_path[0] + '-' + pad_path[1] + '-' + pad_path[2]
     
     # create the new file (prefix + c + suffix)
-    f_ = open(cipher_path, "w")
+    f_ = open(cipher_path.replace('c','t'), "w")
     f_.write(prefix + cipher +suffix)
 
     # shred the pad used
@@ -189,7 +189,7 @@ def recieve(cipher_file, pad_cooresp ):
 ################## Main Function ##################
 if __name__ == "__main__":
     # if there is up interface => excpetion
-    #check_up_interfaces()
+    check_up_interfaces()
 
 
     
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if (args.send):
-        print('mode s')
+        print('Mode s')
         # send mode
         if args.file:
             data = args.file
@@ -225,10 +225,10 @@ if __name__ == "__main__":
         # funcition encode (data, pad) (bin then xor)
         send(data, pad_available, prefix_available, suffix_available)
     elif (args.receive):
-        print('mode r')
+        print('Mode r')
         pad_cooresp = corresponding_pad(args.file)
         print(recieve(args.file, pad_cooresp))
     else:
         # generate mode
-        print('mode g')
+        print('Mode g')
         generate(args.dir)
