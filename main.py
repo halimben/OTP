@@ -127,7 +127,7 @@ def send (data, pad_available, prefix_available, suffix_available):
     
     # create the new file (prefix + c + suffix)
     f_ = open(cipher_path.replace('c','t'), "w")
-    f_.write(prefix + cipher +suffix)
+    f_.write(prefix + cipher + suffix)
 
     # shred the pad used
     #os.remove(pad_available)
